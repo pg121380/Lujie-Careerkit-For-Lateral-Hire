@@ -239,6 +239,10 @@ AI is available after saving a valid configuration; test the connection first. A
 
 ## Release Notes
 
+### v0.5.1
+
+Fixes saving the career scene from settings (the save endpoint now accepts both POST and PATCH).
+
 ### v0.5.0
 
 Adds the career scene switch (campus / experienced hire) and the project materials library; images now publish under this repository's namespace.
