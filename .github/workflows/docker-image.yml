@@ -12,7 +12,8 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: chozzc/lujie-careerkit
+  # 跟随实际推送的仓库（自动转小写）：推到谁的账号，镜像就发布到谁的命名空间。
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
