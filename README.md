@@ -15,7 +15,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
   <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma" />
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-local--data-044a64?logo=sqlite" />
-  <img alt="Docker Image" src="https://github.com/Chozzc/Lujie-Careerkit/actions/workflows/docker-image.yml/badge.svg" />
+  <img alt="Docker Image" src="https://github.com/pg121380/Lujie-Careerkit-For-Lateral-Hire/actions/workflows/docker-image.yml/badge.svg" />
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 </p>
 
@@ -27,7 +27,7 @@ https://github.com/user-attachments/assets/87b60f61-447b-4397-9b23-078008142f75
 
 ## 在线预览
 
-访问 [https://lujie.chozzc.dev](https://lujie.chozzc.dev) 体验在线预览。在线预览的个人数据保存在当前浏览器中，不会自动同步到本地源码或 Docker 安装。
+
 
 ## 功能演示
 
@@ -175,14 +175,14 @@ docker run -d --name lujie-careerkit \
   -p 3000:3000 \
   -v lujie-data:/data \
   -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
-  ghcr.io/chozzc/lujie-careerkit:latest
+  ghcr.io/pg121380/lujie-careerkit-for-lateral-hire:latest
 ```
 
 打开 [http://localhost:3000](http://localhost:3000)。SQLite 数据会保存在 Docker volume `lujie-data` 中，API Key 在应用内设置页配置。
 
 `LUJIE_SETTINGS_SECRET` 用于加密本机保存的设置密钥，请替换成一串足够长的随机字符串。
 
-使用 `latest` 会跟随公开 `main` 的镜像构建。需要固定版本时，请从 [GHCR 已发布标签](https://github.com/Chozzc/Lujie-Careerkit/pkgs/container/lujie-careerkit)选择；本地尚未推送的源码功能不会自动出现在镜像中。
+使用 `latest` 会跟随公开 `main` 的镜像构建。需要固定版本时，请从 [GHCR 已发布标签](https://github.com/pg121380/Lujie-Careerkit-For-Lateral-Hire/pkgs/container/lujie-careerkit-for-lateral-hire)选择；本地尚未推送的源码功能不会自动出现在镜像中。
 
 ### 本地开发
 
@@ -235,6 +235,26 @@ OPENAI_MODEL="qwen3.8-flash"
 保存有效配置后即可使用 AI，建议先测试连接；上次连接测试失败时，需修正配置并重新测试。
 
 ## 版本更新
+
+### v0.5.0
+
+新增求职场景切换（校招/社招）与项目资料库，镜像发布至本仓库命名空间。
+
+#### 求职场景（校招/社招）
+
+- 设置页可切换校招/实习与社招场景；AI 面试官人设、考察重点、简历诊断视角、招呼语要素与 Agent 检索引导随之调整，业务数据保持不变。
+- 社招面试补充离职动机、期望薪资、职责边界、业绩归因等考察点；机会信息库保持校招专版，社招岗位建议直接粘贴 JD 走匹配流程。
+
+#### 项目资料库
+
+- 新增“项目资料”导航：上传项目总结、技术方案等资料（txt/md/pdf/doc/docx，≤10MB），本地解析为纯文本并持久保存。
+- 一键提炼简历素材草稿（含建议模块、经历要点与补充提示）；确认后预填到所选简历版本，由用户在编辑器中检查并手动保存。
+- 面试准备与模拟面试可附加最多三份资料作为深挖证据，内容以快照保存，导出自然包含；应用内 Agent 支持检索资料并随面试工具引用。
+
+#### 其他
+
+- Docker 镜像随仓库发布至 ghcr.io/pg121380/lujie-careerkit-for-lateral-hire，工作流改为跟随推送仓库的命名空间。
+
 
 ### v0.4.0
 

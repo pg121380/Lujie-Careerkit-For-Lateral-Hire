@@ -16,7 +16,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
   <img alt="Prisma" src="https://img.shields.io/badge/Prisma-6-2d3748?logo=prisma" />
   <img alt="SQLite" src="https://img.shields.io/badge/SQLite-local--data-044a64?logo=sqlite" />
-  <img alt="Docker Image" src="https://github.com/Chozzc/Lujie-Careerkit/actions/workflows/docker-image.yml/badge.svg" />
+  <img alt="Docker Image" src="https://github.com/pg121380/Lujie-Careerkit-For-Lateral-Hire/actions/workflows/docker-image.yml/badge.svg" />
   <img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" />
 </p>
 
@@ -28,7 +28,7 @@ LuJie CareerKit is built for internships, campus recruiting, and career job sear
 
 ## Online Preview
 
-Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev). Personal data in the online preview stays in the current browser and does not automatically synchronize with local source or Docker installations.
+
 
 ## Feature Demos
 
@@ -86,6 +86,8 @@ Try the live preview at [https://lujie.chozzc.dev](https://lujie.chozzc.dev). Pe
 ## Highlights
 
 - **Structured resume editing**: maintain multiple resume versions, create an independent copy of any resume to try different edits, edit education, internship, project, skill, and custom sections, switch templates and themes, and export PDF, PNG, or editable DOCX files.
+- **Career scene switch (campus / experienced)**: choose campus/internship or experienced-hire mode in settings, and the AI interviewer persona, interview focus, resume diagnosis perspective, greeting-message elements, and in-app Agent guidance adapt accordingly while resume and application data stay unchanged.
+- **Project materials library**: upload project summaries and technical documents (txt/md/pdf/doc/docx) stored locally; distill them into resume-material drafts that are pre-filled into the editor only after your confirmation; attach materials to interview preparation and mock interviews as deep-dive evidence, included automatically in exports.
 - **AI resume analysis**: diagnose action-result structure, evidence, clarity, and organization first; let the user choose which issues and directions to address; then create an independent optimized version while preserving the original.
 - **Cover letters and recruiter greetings**: combine the current resume, a complete JD, and user-provided availability details to generate a formal cover letter or a concise recruiter-chat opener, then edit, copy, or regenerate the result.
 - **JD matching**: paste a complete JD with the company, full role title, requirements, and responsibilities, then let AI diagnose evidence, reorder emphasis, improve wording, and save a role-specific version without inventing experience.
@@ -176,14 +178,14 @@ docker run -d --name lujie-careerkit \
   -p 3000:3000 \
   -v lujie-data:/data \
   -e LUJIE_SETTINGS_SECRET="replace-with-a-long-random-string" \
-  ghcr.io/chozzc/lujie-careerkit:latest
+  ghcr.io/pg121380/lujie-careerkit-for-lateral-hire:latest
 ```
 
 Open [http://localhost:3000](http://localhost:3000). SQLite data is stored in the Docker volume `lujie-data`. API keys are configured from the in-app Settings page.
 
 `LUJIE_SETTINGS_SECRET` encrypts locally saved settings secrets. Replace the example value with a long random string.
 
-Use `latest` to follow the public `main` image build. To pin a version, choose a [published GHCR tag](https://github.com/Chozzc/Lujie-Careerkit/pkgs/container/lujie-careerkit). Source changes that have not been pushed are not automatically included in the image.
+Use `latest` to follow the public `main` image build. To pin a version, choose a [published GHCR tag](https://github.com/pg121380/Lujie-Careerkit-For-Lateral-Hire/pkgs/container/lujie-careerkit-for-lateral-hire). Source changes that have not been pushed are not automatically included in the image.
 
 ### Local Development
 
@@ -236,6 +238,25 @@ OPENAI_MODEL="qwen3.8-flash"
 AI is available after saving a valid configuration; test the connection first. A failed connection test requires correcting the configuration and testing again.
 
 ## Release Notes
+
+### v0.5.0
+
+Adds the career scene switch (campus / experienced hire) and the project materials library; images now publish under this repository's namespace.
+
+#### Career scene (campus / experienced)
+
+- Switch between campus/internship and experienced-hire modes in settings; the AI interviewer persona, focus areas, resume diagnosis perspective, greeting elements and Agent guidance adapt while business data stays unchanged.
+- Experienced-hire interviews add resignation motives, salary expectations, ownership boundaries and quantified-impact probing; the opportunities catalog remains campus-only, and experienced users are guided to paste a full JD into the matching workflow.
+
+#### Project materials library
+
+- New "Project materials" navigation: upload project summaries and technical documents (txt/md/pdf/doc/docx, up to 10 MB), parsed to plain text locally and stored persistently.
+- Distill resume-material drafts (suggested section, highlights, follow-up hints); applying a draft pre-fills the chosen resume version, and saving stays in the editor under user control.
+- Interview preparation and mock interviews accept up to three materials as deep-dive evidence, stored as snapshots and included in exports; the in-app Agent can search materials and attach them via the interview tools.
+
+#### Other
+
+- Docker images publish to ghcr.io/pg121380/lujie-careerkit-for-lateral-hire; the workflow now follows the namespace of the repository it runs in.
 
 ### v0.4.0
 
