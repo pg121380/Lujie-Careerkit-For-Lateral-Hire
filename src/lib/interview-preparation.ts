@@ -6,6 +6,11 @@ export const interviewPreparationInputSchema = z.object({
   resume: z.unknown(),
   focus: z.enum(["comprehensive", "project", "behavioral", "hr"]).default("comprehensive"),
   locale: z.enum(["zh-CN", "en"]).default("zh-CN"),
+  /** 附加项目资料快照：保存内容拷贝，历史记录不受资料删除影响。 */
+  materials: z.array(z.object({
+    name: z.string().trim().min(1).max(200),
+    content: z.string().trim().min(1).max(60_000),
+  })).max(3).optional(),
 });
 
 export const createInterviewPreparationInputSchema = interviewPreparationInputSchema.extend({

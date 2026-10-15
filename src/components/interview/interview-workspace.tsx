@@ -14,6 +14,7 @@ import {
   ListChecks,
   LoaderCircle,
   MessagesSquare,
+  NotebookPen,
   Pencil,
   Printer,
   RefreshCw,
@@ -65,6 +66,7 @@ import {
   type InterviewPreparationExportLabels,
 } from "@/lib/interview-preparation-export";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
+import { buildInterviewMaterialSnapshots, type ProjectMaterial, type ProjectMaterialSummary } from "@/lib/project-material";
 import { buildUploadedResumeDraft, isResumeContentLike, type UploadedResumeDraft } from "@/lib/resume-upload";
 import type { ResumeContent } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -116,6 +118,7 @@ export function InterviewWorkspace({
   resume,
   mainResumeName,
   mainResumeVersionId,
+  materials,
   targetSessionId,
   targetPreparationId,
   onSessionUpsert,
@@ -131,6 +134,7 @@ export function InterviewWorkspace({
   resume: ResumeContent;
   mainResumeName: string;
   mainResumeVersionId?: string;
+  materials: ProjectMaterialSummary[];
   targetSessionId?: string;
   targetPreparationId?: string;
   onSessionUpsert: (session: InterviewSessionRecord) => void;
@@ -154,6 +158,7 @@ export function InterviewWorkspace({
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [jdDraft, setJdDraft] = useState("");
   const [mode, setMode] = useState<InterviewMode>("comprehensive");
+  const [selectedMaterialIds, setSelectedMaterialIds] = useState<string[]>([]);
   const [draftAnswers, setDraftAnswers] = useState<Record<string, string>>({});
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [isWorking, setIsWorking] = useState(false);
@@ -201,6 +206,23 @@ export function InterviewWorkspace({
       ? t("setup.needJd")
       : "";
   const canStart = !setupDisabledReason && !isWorking && !isUploadingResume;
+
+  async function resolveSelectedMaterials() {
+    if (!selectedMaterialIds.length) return undefined;
+    const ids = selectedMaterialIds.slice(0, 3);
+    const loaded = await Promise.all(
+      ids.map(async (id) => {
+        const response = await fetch(`/api/materials/${encodeURIComponent(id)}`, { cache: "no-store" });
+        if (!response.ok) return null;
+        const data = (await response.json()) as { material: ProjectMaterial | null };
+        return data.material;
+      }),
+    );
+    const snapshots = loaded
+      .filter((material): material is ProjectMaterial => Boolean(material))
+      .map((material) => ({ name: material.name, content: material.content }));
+    return snapshots.length ? buildInterviewMaterialSnapshots(snapshots) : undefined;
+  }
   const activeQuestion = activeSession?.questions[activeSession.currentQuestionIndex];
   const report = activeSession?.feedback ?? null;
 
@@ -394,6 +416,7 @@ export function InterviewWorkspace({
             jd: jdDraft.trim(),
             resumeName: selectedResumeName,
             resume: selectedResume,
+            materials: await resolveSelectedMaterials(),
           },
         },
         t("status.generatingQuestions"),
@@ -426,6 +449,7 @@ export function InterviewWorkspace({
           resume: selectedResume,
           focus: mode,
           locale: locale === "en" ? "en" : "zh-CN",
+          materials: await resolveSelectedMaterials(),
         },
       );
       setActivePreparation(result.record);
@@ -619,6 +643,11 @@ export function InterviewWorkspace({
           onJdChange={setJdDraft}
           mode={mode}
           onModeChange={setMode}
+          materials={materials}
+          selectedMaterialIds={selectedMaterialIds}
+          onToggleMaterial={(id) => setSelectedMaterialIds((current) => (
+            current.includes(id) ? current.filter((item) => item !== id) : [...current, id]
+          ))}
           canStart={canStart}
           disabledReason={setupDisabledReason}
           setupTask={setupTask}
@@ -694,6 +723,9 @@ function SetupScreen(props: {
   onJdChange: (value: string) => void;
   mode: InterviewMode;
   onModeChange: (mode: InterviewMode) => void;
+  materials: ProjectMaterialSummary[];
+  selectedMaterialIds: string[];
+  onToggleMaterial: (id: string) => void;
   canStart: boolean;
   disabledReason: string;
   setupTask: "preparation" | "questions" | null;
@@ -729,17 +761,47 @@ function SetupScreen(props: {
       settingsDescription={t("setup.settingsDescription")}
       onJdImportStatus={props.onMessage}
       settings={
-        <div className="grid w-full gap-4 md:grid-cols-2">
-          {MODE_OPTIONS.map((option) => (
-            <PreparationOptionCard
-              key={option.value}
-              checked={props.mode === option.value}
-              icon={option.icon}
-              label={t(option.labelKey)}
-              description={t(option.descriptionKey)}
-              onChange={() => props.onModeChange(option.value as InterviewMode)}
-            />
-          ))}
+        <div className="grid w-full gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            {MODE_OPTIONS.map((option) => (
+              <PreparationOptionCard
+                key={option.value}
+                checked={props.mode === option.value}
+                icon={option.icon}
+                label={t(option.labelKey)}
+                description={t(option.descriptionKey)}
+                onChange={() => props.onModeChange(option.value as InterviewMode)}
+              />
+            ))}
+          </div>
+          {props.materials.length ? (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">{t("setup.materials")}</legend>
+              <div className="flex flex-wrap gap-2">
+                {props.materials.slice(0, 12).map((material) => {
+                  const checked = props.selectedMaterialIds.includes(material.id);
+                  return (
+                    <button
+                      key={material.id}
+                      type="button"
+                      aria-pressed={checked}
+                      onClick={() => props.onToggleMaterial(material.id)}
+                      className={cn(
+                        "rounded-lg border px-3 py-1.5 text-left text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring",
+                        checked ? "border-brand/40 bg-brand-muted text-brand" : "border-line bg-background hover:bg-surface-low",
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <NotebookPen aria-hidden className="size-3.5 shrink-0" />
+                        <span className="max-w-56 truncate">{material.name}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground">{t("setup.materialsHint")}</p>
+            </fieldset>
+          ) : null}
         </div>
       }
       footer={

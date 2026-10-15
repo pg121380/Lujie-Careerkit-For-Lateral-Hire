@@ -13,6 +13,17 @@ import {
 import { getAiSettingsMaintenancePatch } from "./ai/settings-migration";
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROVIDER_ID, LEGACY_DEFAULT_AI_MODELS, getAiProvider } from "./ai/provider-registry";
 import { normalizeApplicationInterviewRound, resolveApplicationAppliedAt } from "./application";
+import { careerSceneSchema, normalizeCareerScene, type CareerScene } from "./career-scene";
+import {
+  appendGeneration,
+  normalizeSourceKind,
+  parseGenerations,
+  toMaterialSummary,
+  type MaterialGeneration,
+  type MaterialInput,
+  type MaterialUpdate,
+  type ProjectMaterial,
+} from "./project-material";
 import { analyzeJobInput } from "./job-analysis";
 import { prisma } from "./db";
 import {
@@ -273,7 +284,7 @@ async function ensureSettings() {
 export async function getAppData() {
   await ensureSeedData();
 
-  const [versions, jobs, applications, interviews, interviewPreparations, settings] =
+  const [versions, jobs, applications, interviews, interviewPreparations, materials, settings] =
     await Promise.all([
       prisma.resumeVersion.findMany({ orderBy: { updatedAt: "desc" } }),
       prisma.job.findMany({ orderBy: { createdAt: "desc" } }),
@@ -286,6 +297,7 @@ export async function getAppData() {
         orderBy: { createdAt: "desc" },
         include: { job: true, resumeVersion: true },
       }),
+      prisma.projectMaterial.findMany({ orderBy: { updatedAt: "desc" } }),
       prisma.settings.findUnique({ where: { id: "singleton" } }),
     ]);
   const primaryVersion = versions.find((version) => !version.jobId && !hasStoredOptimizationBase(version.content)) ?? null;
@@ -294,6 +306,7 @@ export async function getAppData() {
     : versions;
 
   return {
+    materials: materials.map((row) => toProjectMaterial(row)).map(toMaterialSummary),
     resume: primaryVersion
       ? {
           id: primaryVersion.id,
@@ -344,16 +357,8 @@ export async function getAppData() {
     interviewPreparations: interviewPreparations.map(toInterviewPreparationRecord),
     settings: settings
       ? {
-          ai: redactAiSettings({
-            aiProvider: settings.aiProvider,
-            aiModel: settings.aiModel,
-            aiBaseUrl: settings.aiBaseUrl,
-            aiApiKey: settings.aiApiKey,
-            aiEnabled: settings.aiEnabled,
-            aiTemperature: settings.aiTemperature,
-            aiLastTestedAt: settings.aiLastTestedAt,
-            aiLastTestStatus: settings.aiLastTestStatus,
-          }),
+          ai: redactAiSettings(toStoredAiSettings(settings)),
+          careerScene: normalizeCareerScene(settings.careerScene),
           updatedAt: settings.updatedAt.toISOString(),
         }
       : null,
@@ -409,6 +414,119 @@ export async function getEffectiveAiRuntimeSettings() {
   const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
   if (!settings) throw new Error("Settings seed failed.");
   return getEffectiveAiSettings(toStoredAiSettings(settings));
+}
+
+export async function getCareerScene(): Promise<CareerScene> {
+  await ensureSeedData();
+  const settings = await prisma.settings.findUnique({
+    where: { id: "singleton" },
+    select: { careerScene: true },
+  });
+  return normalizeCareerScene(settings?.careerScene);
+}
+
+export async function updateCareerScene(input: unknown): Promise<CareerScene> {
+  const parsed = careerSceneSchema.safeParse(input);
+  if (!parsed.success) throw new Error("求职场景取值不正确。");
+  await ensureSeedData();
+  await prisma.settings.upsert({
+    where: { id: "singleton" },
+    create: { id: "singleton", careerScene: parsed.data },
+    update: { careerScene: parsed.data },
+  });
+  return parsed.data;
+}
+
+export async function listProjectMaterials(): Promise<ProjectMaterial[]> {
+  await ensureSeedData();
+  const rows = await prisma.projectMaterial.findMany({ orderBy: { updatedAt: "desc" } });
+  return rows.map(toProjectMaterial);
+}
+
+export async function getProjectMaterial(id: string): Promise<ProjectMaterial | null> {
+  await ensureSeedData();
+  const row = await prisma.projectMaterial.findUnique({ where: { id } });
+  return row ? toProjectMaterial(row) : null;
+}
+
+export async function createProjectMaterial(input: MaterialInput): Promise<ProjectMaterial> {
+  await ensureSeedData();
+  const row = await prisma.projectMaterial.create({
+    data: {
+      name: input.name,
+      sourceFileName: input.sourceFileName,
+      sourceKind: normalizeSourceKind(input.sourceKind),
+      content: input.content,
+      charCount: input.content.length,
+    },
+  });
+  return toProjectMaterial(row);
+}
+
+export async function updateProjectMaterial(id: string, input: MaterialUpdate): Promise<ProjectMaterial> {
+  await ensureSeedData();
+  const data: { name?: string; content?: string; charCount?: number } = {};
+  if (input.name !== undefined) data.name = input.name;
+  if (input.content !== undefined) {
+    data.content = input.content;
+    data.charCount = input.content.length;
+  }
+  const row = await prisma.projectMaterial.update({ where: { id }, data });
+  return toProjectMaterial(row);
+}
+
+export async function deleteProjectMaterial(id: string): Promise<void> {
+  await ensureSeedData();
+  await prisma.projectMaterial.delete({ where: { id } });
+}
+
+export async function addMaterialGeneration(
+  id: string,
+  generation: Omit<MaterialGeneration, "id" | "createdAt">,
+): Promise<{ material: ProjectMaterial; generation: MaterialGeneration }> {
+  await ensureSeedData();
+  const row = await prisma.projectMaterial.findUnique({ where: { id } });
+  if (!row) throw new Error("找不到指定的项目资料。");
+  const generations = parseGenerations(row.generations);
+  const next = appendGeneration(generations, generation, new Set(generations.map((item) => item.id)));
+  const updated = await prisma.projectMaterial.update({
+    where: { id },
+    data: { generations: [...generations, next] },
+  });
+  return { material: toProjectMaterial(updated), generation: next };
+}
+
+export async function deleteMaterialGeneration(id: string, generationId: string): Promise<ProjectMaterial> {
+  await ensureSeedData();
+  const row = await prisma.projectMaterial.findUnique({ where: { id } });
+  if (!row) throw new Error("找不到指定的项目资料。");
+  const generations = parseGenerations(row.generations).filter((item) => item.id !== generationId);
+  const updated = await prisma.projectMaterial.update({ where: { id }, data: { generations } });
+  return toProjectMaterial(updated);
+}
+
+function toProjectMaterial(row: {
+  id: string;
+  name: string;
+  sourceFileName: string;
+  sourceKind: string;
+  content: string;
+  charCount: number;
+  generations: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}): ProjectMaterial {
+  return {
+    id: row.id,
+    name: row.name,
+    sourceFileName: row.sourceFileName,
+    sourceKind: normalizeSourceKind(row.sourceKind),
+    content: row.content,
+    charCount: row.charCount,
+    generations: parseGenerations(row.generations),
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
 }
 
 export async function recordAiSettingsTest(status: AiTestStatus) {

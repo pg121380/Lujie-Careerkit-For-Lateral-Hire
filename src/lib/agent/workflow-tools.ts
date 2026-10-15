@@ -4,18 +4,21 @@ import { generateInterviewPreparationWithAI } from "@/lib/ai/interview-preparati
 import { generateResumeDraftWithAI } from "@/lib/ai/resume-draft";
 import type { EffectiveAiSettings } from "@/lib/ai/settings";
 import { tailorResumeWithAI } from "@/lib/ai-service";
+import type { CareerScene } from "@/lib/career-scene";
 import { careerLibraryTargetPath } from "@/lib/career-library";
 import { TEMPLATES } from "@/lib/constants";
 import { interviewService } from "@/lib/interview-runtime";
 import { createInterviewPreparationInputSchema } from "@/lib/interview-preparation";
 import { createInterviewSessionInputSchema, interviewModeSchema } from "@/lib/interview";
 import { analyzeJobInput } from "@/lib/job-analysis";
+import { buildInterviewMaterialSnapshots } from "@/lib/project-material";
 import {
   createInterviewPreparationRecord,
   createJob,
   createResumeVersion,
   createTailoredVersionForJob,
   getAppData,
+  getProjectMaterial,
   getTailoringBaseResume,
   updateResumeVersion,
 } from "@/lib/repository";
@@ -76,12 +79,14 @@ export const createInterviewPreparationSchema = z.object({
   jobId: z.string().trim().min(1).describe("Exact existing Job ID returned by search_pipeline."),
   resumeVersionId: z.string().trim().min(1).describe("Exact resume-version ID returned by get_resume_context."),
   focus: z.enum(["comprehensive", "project", "behavioral", "hr"]).default("comprehensive"),
+  materialIds: z.array(z.string().trim().min(1)).max(3).optional().describe("Up to three exact project-material IDs returned by search_project_materials. Their content snapshots are stored with the record."),
 });
 
 export const createMockInterviewSchema = z.object({
   jobId: z.string().trim().min(1).describe("Exact existing Job ID returned by search_pipeline."),
   resumeVersionId: z.string().trim().min(1).describe("Exact resume-version ID returned by get_resume_context."),
   mode: interviewModeSchema.default("comprehensive"),
+  materialIds: z.array(z.string().trim().min(1)).max(3).optional().describe("Up to three exact project-material IDs returned by search_project_materials. Their content snapshots are stored with the session."),
 });
 
 export const updateResumePresentationSchema = z.object({
@@ -93,8 +98,9 @@ export async function createResumeFromExperience(
   input: z.infer<typeof createResumeFromExperienceSchema>,
   settings: EffectiveAiSettings,
   locale: "zh-CN" | "en",
+  scene?: CareerScene,
 ) {
-  const draft = await generateResumeDraftWithAI({ settings, locale, ...input });
+  const draft = await generateResumeDraftWithAI({ settings, locale, scene, ...input });
   if (draft.source !== "ai") throw new Error(draft.message);
   const version = await createResumeVersion({
     name: input.resumeName,
@@ -111,6 +117,7 @@ export async function createResumeFromExperience(
 export async function createJdTailoredResume(
   input: z.infer<typeof createJdTailoredResumeSchema>,
   settings: EffectiveAiSettings,
+  scene?: CareerScene,
 ) {
   const data = await getAppData();
   const existingJob = input.jobId ? data.jobs.find((job) => job.id === input.jobId) : undefined;
@@ -130,6 +137,7 @@ export async function createJdTailoredResume(
     analysis,
     preferences: input.preferences,
     settings,
+    scene,
   });
   if (tailored.source !== "ai") throw new Error(tailored.message);
   const effectiveAnalysis = mergeTailoringAnalysis(analysis, tailored.meta);
@@ -157,6 +165,7 @@ export async function createInterviewPreparation(
   input: z.infer<typeof createInterviewPreparationSchema>,
   settings: EffectiveAiSettings,
   locale: "zh-CN" | "en",
+  scene?: CareerScene,
 ) {
   const data = await getAppData();
   const job = data.jobs.find((item) => item.id === input.jobId);
@@ -173,7 +182,11 @@ export async function createInterviewPreparation(
     focus: input.focus,
     locale,
   });
-  const generated = await generateInterviewPreparationWithAI(settings, context);
+  const generated = await generateInterviewPreparationWithAI(settings, {
+    ...context,
+    scene,
+    materials: await resolveMaterialSnapshots(input.materialIds),
+  });
   if (generated.source !== "ai") throw new Error(generated.message);
   const record = await createInterviewPreparationRecord(context, generated.data);
   return {
@@ -201,6 +214,7 @@ export async function createMockInterview(input: z.infer<typeof createMockInterv
       jd: job.jd,
       resumeName: resume.name,
       resume: resume.content,
+      materials: await resolveMaterialSnapshots(input.materialIds),
     },
   }));
   return {
@@ -227,6 +241,23 @@ export async function updateResumePresentation(input: z.infer<typeof updateResum
     version: serializeVersion(version),
     href: `/resume/edit?version=${encodeURIComponent(version.id)}`,
   };
+}
+
+async function resolveMaterialSnapshots(materialIds?: string[]) {
+  if (!materialIds?.length) return undefined;
+  const loaded = await Promise.all(
+    materialIds.slice(0, 3).map(async (id) => {
+      try {
+        return await getProjectMaterial(id);
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const snapshots = loaded
+    .filter((material): material is NonNullable<typeof material> => Boolean(material))
+    .map((material) => ({ name: material.name, content: material.content }));
+  return snapshots.length ? buildInterviewMaterialSnapshots(snapshots) : undefined;
 }
 
 function serializeVersion(version: {

@@ -3,6 +3,7 @@ import {
   ClipboardList,
   FileText,
   FolderArchive,
+  FolderOpen,
   LayoutDashboard,
   Mic,
   Settings,
@@ -17,6 +18,7 @@ export type NavItem = { key: NavKey; labelKey: NavKey; icon: LucideIcon };
 export const navItems: NavItem[] = [
   { key: "dashboard", labelKey: "dashboard", icon: LayoutDashboard },
   { key: "campus", labelKey: "campus", icon: Building2 },
+  { key: "materials", labelKey: "materials", icon: FolderOpen },
   { key: "resume", labelKey: "resume", icon: FileText },
   { key: "match", labelKey: "match", icon: Target },
   { key: "interview", labelKey: "interview", icon: Mic },

@@ -6,7 +6,7 @@ import {
 } from "@/lib/ai/application-message";
 import { parseJsonRequest } from "@/lib/api-request";
 import { resumeContentInputSchema } from "@/lib/resume-content";
-import { getEffectiveAiRuntimeSettings } from "@/lib/repository";
+import { getCareerScene, getEffectiveAiRuntimeSettings } from "@/lib/repository";
 
 const schema = z.object({
   kind: applicationMessageKindSchema,
@@ -25,8 +25,8 @@ export async function POST(request: Request) {
   if (!parsed.success) return parsed.response;
 
   try {
-    const settings = await getEffectiveAiRuntimeSettings();
-    const result = await generateApplicationMessageWithAI(settings, parsed.data);
+    const [settings, scene] = await Promise.all([getEffectiveAiRuntimeSettings(), getCareerScene()]);
+    const result = await generateApplicationMessageWithAI(settings, { ...parsed.data, scene });
     if (result.source !== "ai") {
       return Response.json({ message: result.message }, { status: 503 });
     }

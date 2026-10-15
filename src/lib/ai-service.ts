@@ -10,6 +10,7 @@ import {
   type ResumeDiagnosis,
 } from "./ai/resume-diagnosis";
 import { resumeContentSchema } from "./resume-content";
+import type { CareerScene } from "./career-scene";
 import { buildOptimizedResumeVersionName, buildTailoredResumeVersion } from "./resume-versioning";
 import { buildResumeDisplayName } from "./resume-naming";
 import type { JobAnalysis, ResumeContent, ResumeOptimizationMeta } from "./types";
@@ -51,8 +52,10 @@ export async function tailorResumeWithAI(input: {
     highlightMatchedSkills?: boolean;
   };
   settings?: EffectiveAiSettings;
+  scene?: CareerScene;
 }): Promise<ResumeAiTaskResult> {
   const settings = await resolveAiSettings(input.settings);
+  const scene = input.scene ?? (await resolveCareerScene());
   const preferenceLines = [
     input.preferences?.emphasizeImpact
       ? "强调项目成果：优先把原有经历改写成「动作 + 方法/职责 + 可验证结果」；弱相关内容可以压缩，但不能新增项目或成果。"
@@ -77,7 +80,9 @@ export async function tailorResumeWithAI(input: {
     settings,
     schema: resumeOptimizationTaskOutputSchema,
     system:
-      "你是面向国内大学生实习与校招的简历匹配优化顾问。只返回合法 JSON，不要 Markdown。",
+      scene === "experienced"
+        ? "你是面向有工作经验候选人的社招简历匹配优化顾问，关注职责边界、量化业绩与职级匹配。只返回合法 JSON，不要 Markdown。"
+        : "你是面向国内大学生实习与校招的简历匹配优化顾问。只返回合法 JSON，不要 Markdown。",
     prompt: [
       "任务：基于 JD 对原简历做“匹配优化”，返回包含 resume 和 meta 的完整 JSON。",
       "resume 必须是与输入 ResumeContent 完全相同结构的完整简历；meta 用于前端展示优化说明和版本命名。",
@@ -95,9 +100,11 @@ export async function tailorResumeWithAI(input: {
       "4. 保留姓名、邮箱、电话、城市、链接、学校、公司、项目名、角色名、起止时间、自定义模块标题等基础事实。",
       "5. JD 中出现但原简历没有证据的能力，只能在表达上弱化为兴趣、相关基础或不写，不能伪造掌握。",
       "6. 输出必须是可被 JSON.parse 解析的对象，不要包裹解释文字。",
-      "7. meta.company 和 meta.title 要从完整 JD 中识别真实公司与完整岗位名称；meta.title 必须保留实习/校招属性、方向说明和括号内限定词，不要缩写。无法确认时留空，不要写“目标公司/目标岗位”。",
+      "7. meta.company 和 meta.title 要从完整 JD 中识别真实公司与完整岗位名称；meta.title 必须保留经验级别、方向说明和括号内限定词，不要缩写。无法确认时留空，不要写“目标公司/目标岗位”。",
       "8. meta.keywords 写 3-6 个真实岗位关键词；meta.changes 只写 2-5 个用户能看懂的模块名，如自我评价、项目经历、技能特长、自定义模块；不要写 profile.summary / projects.highlights / customSections 等内部字段名，也不要写很长的实现说明；meta.summary 用一句自然中文概括优化重点。",
-      "9. meta.versionName 格式建议为 JD匹配优化-姓名-公司岗位，例如 JD匹配优化-陈同学-腾讯产品经理实习生；无法识别公司时只写岗位。",
+      scene === "experienced"
+        ? "9. meta.versionName 格式建议为 JD匹配优化-姓名-公司岗位，例如 JD匹配优化-林岚-美团后端开发工程师；无法识别公司时只写岗位。"
+        : "9. meta.versionName 格式建议为 JD匹配优化-姓名-公司岗位，例如 JD匹配优化-陈同学-腾讯产品经理实习生；无法识别公司时只写岗位。",
       "",
       "用户优化偏好：",
       preferenceLines.length ? preferenceLines.map((line) => `- ${line}`).join("\n") : "- 真实、简洁、围绕岗位匹配重排重点。",
@@ -199,16 +206,22 @@ export async function analyzeResumeWithAI(input: {
   resume: ResumeContent;
   locale?: "zh-CN" | "en";
   settings?: EffectiveAiSettings;
+  scene?: CareerScene;
 }): Promise<ResumeDiagnosisTaskResult> {
   const settings = await resolveAiSettings(input.settings);
+  const scene = input.scene ?? (await resolveCareerScene());
   const inEnglish = input.locale === "en";
   const currentDate = new Date().toISOString().slice(0, 10);
   const result = await runAiObjectTask({
     settings,
     schema: resumeDiagnosisSchema,
-    system: inEnglish
-      ? "You are a rigorous resume reviewer for internships and graduate roles. Return valid JSON only."
-      : "你是严谨的实习与校招简历诊断顾问。只返回合法 JSON，不要 Markdown。",
+    system: scene === "experienced"
+      ? inEnglish
+        ? "You are a rigorous resume reviewer for experienced professionals. Return valid JSON only."
+        : "你是严谨的社招简历诊断顾问。只返回合法 JSON，不要 Markdown。"
+      : inEnglish
+        ? "You are a rigorous resume reviewer for internships and graduate roles. Return valid JSON only."
+        : "你是严谨的实习与校招简历诊断顾问。只返回合法 JSON，不要 Markdown。",
     prompt: [
       inEnglish ? "Analyze the resume before making any edits." : "任务：只分析当前简历，不改写任何内容。",
       inEnglish
@@ -228,6 +241,9 @@ export async function analyzeResumeWithAI(input: {
             "8. Set action to ai-edit when existing text can be safely rewritten. Use user-input only when factual content is entirely absent, evidence is empty, and the candidate must supply it. Use user-confirm only for a contradictory hard fact such as an impossible GPA or conflicting date.",
             "9. profile.summary (personal summary) and selfReview (self-evaluation) are optional alternatives. Never report profile.summary as missing when selfReview already provides equivalent summary content, and never require both.",
             `10. The current date is ${currentDate}. Email, phone, links, and other contact details are intentionally removed before analysis for privacy. Never report them as missing or invalid.`,
+            ...(scene === "experienced" ? [
+              "11. For experienced candidates, also check: quantified business results and attribution, ownership boundaries versus team contribution, promotion or level progression evidence, and unexplained employment gaps. Suggest rewording only with facts already in the resume.",
+            ] : []),
           ].join("\n")
         : [
             "1. STAR 只作为诊断工具，不是僵硬模板；场景和任务可以由标题或上下文隐含，重点检查行动、方法和结果是否清楚。",
@@ -240,6 +256,9 @@ export async function analyzeResumeWithAI(input: {
             "8. 每个问题必须填写 action：已有文字可以安全改写时使用 ai-edit；只有真实信息完全缺失、evidence 为空且必须由用户提供时才使用 user-input；GPA 分子大于满分、日期冲突等硬事实矛盾使用 user-confirm。",
             "9. profile.summary（个人简介）与 selfReview（自我评价）是可选且可替代的表达模块；selfReview 已有同类内容时不得诊断 profile.summary 缺失，也不得要求两者同时存在。",
             `10. 当前日期为 ${currentDate}，邮箱、电话、链接等联系方式会在分析前因隐私保护被主动移除，不得诊断这些字段缺失或有误。`,
+            ...(scene === "experienced" ? [
+              "11. 社招简历额外检查：业绩是否有量化与归因、职责边界与团队贡献是否清晰、职级或晋升证据是否体现、空窗期是否有可解释的表述；只能在简历已有事实上建议改写，不得建议编造。",
+            ] : []),
           ].join("\n"),
       "",
       inEnglish
@@ -264,6 +283,11 @@ async function resolveAiSettings(settings?: EffectiveAiSettings) {
   if (settings) return settings;
   const { getEffectiveAiRuntimeSettings } = await import("./repository");
   return getEffectiveAiRuntimeSettings();
+}
+
+async function resolveCareerScene(): Promise<CareerScene> {
+  const { getCareerScene } = await import("./repository");
+  return getCareerScene();
 }
 
 function readResumeAiOutput(

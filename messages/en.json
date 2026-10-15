@@ -8,6 +8,7 @@
     },
     "nav": {
       "campus": "Campus recruitment",
+      "materials": "Project materials",
       "dashboard": "Dashboard",
       "resume": "Resume Editor",
       "match": "JD Matching",
@@ -146,6 +147,7 @@
       "provider": "Provider: {provider}",
       "backDashboard": "Back to dashboard"
     },
+    "materialApplied": "The material draft is pre-filled in the resume editor. Review it, then save.",
     "pages": {
       "resumeOptimizationTitle": "AI Resume Optimization",
       "resumeOptimizationSubtitle": "Improve clarity, density, and result presentation based on the current resume, then keep editing the generated version.",
@@ -429,6 +431,8 @@
       "description": "Paste the complete company name, full role title, responsibilities, requirements, and skills. LuJie will generate an interview prep guide or mock questions from the selected resume.",
       "jdLabel": "Company / Role / Description / Requirements / Nice-to-haves *",
       "jdPlaceholder": "Paste the complete JD, including the company name, full role title, responsibilities, requirements, nice-to-haves, and business context...",
+      "materials": "Attach project materials (optional)",
+      "materialsHint": "Select project materials to use as deep-dive evidence, up to 3; their content snapshots are stored with the interview record, so later deletion does not affect history.",
       "settingsTitle": "Interview settings",
       "settingsDescription": "Choose the focus for this round. Questions stay fixed after generation.",
       "hint": "AI will generate this round of questions from the selected resume and JD.",
@@ -441,7 +445,13 @@
     },
     "preparation": {
       "badge": "Interview preparation",
-      "edit": { "action": "Edit material", "save": "Save changes", "cancel": "Cancel", "saved": "Changes saved", "failed": "Could not save changes" },
+      "edit": {
+        "action": "Edit material",
+        "save": "Save changes",
+        "cancel": "Cancel",
+        "saved": "Changes saved",
+        "failed": "Could not save changes"
+      },
       "basedOn": "Generated from the target JD and {resumeName}",
       "tocTitle": "Guide contents",
       "capabilityTitle": "Role capability profile",
@@ -845,12 +855,12 @@
           "description": "Use conventional wording and supported skill terms."
         }
       },
-        "additionalDirection": {
-          "label": "Tell AI how to revise",
-          "optional": "Optional",
-          "placeholder": "For example: keep useful suggestions but do not change my GPA; make project bullets more specific, replace vague assistance wording with clear ownership, and keep the tone restrained.",
-          "hint": "State what to revise, how to phrase it, and which suggestions to ignore. AI only handles selected issues and must not invent facts."
-        },
+      "additionalDirection": {
+        "label": "Tell AI how to revise",
+        "optional": "Optional",
+        "placeholder": "For example: keep useful suggestions but do not change my GPA; make project bullets more specific, replace vague assistance wording with clear ownership, and keep the tone restrained.",
+        "hint": "State what to revise, how to phrase it, and which suggestions to ignore. AI only handles selected issues and must not invent facts."
+      },
       "optimizing": "Generating an optimized version from your choices...",
       "optimizationFailed": "Optimization failed. Try again later.",
       "close": "Not now",
@@ -996,6 +1006,22 @@
   "settings": {
     "languageTitle": "Language",
     "languageDescription": "Switch the app interface language. Resume content, JDs, and local data are not translated automatically.",
+    "careerScene": {
+      "title": "Career scene",
+      "description": "Choosing campus or experienced adjusts AI focus, the default opportunities channel and Agent search scope; resumes, jobs and applications stay unchanged.",
+      "current": "Current",
+      "saving": "Saving...",
+      "saved": "Career scene updated.",
+      "saveFailed": "Failed to save the career scene.",
+      "campus": {
+        "label": "Campus / Internship",
+        "hint": "New graduates and interns: focuses on fundamentals, project potential, internship duration and graduation date."
+      },
+      "experienced": {
+        "label": "Experienced hire",
+        "hint": "Working professionals: focuses on quantified results, ownership scope, promotions, resignation motives and availability."
+      }
+    },
     "localDataTitle": "Local data",
     "localDataDescription": "Remove only the built-in samples, or clear all local career data and AI settings before restoring them.",
     "clearSampleConfirm": "Remove all built-in sample jobs, the sample resume, and their generated materials? Your own data and AI settings will be preserved.",
@@ -1225,7 +1251,10 @@
     "title": "Career Library",
     "sampleJob": "Sample job",
     "summary": "{jobs} job files · {artifacts} generated outcomes",
-    "groups": { "job": "By job", "type": "By type" },
+    "groups": {
+      "job": "By job",
+      "type": "By type"
+    },
     "searchJobs": "Search company, role, or city...",
     "searchArtifacts": "Search outcomes, companies, or roles...",
     "sortLabel": "Sort outcomes",
@@ -1255,20 +1284,145 @@
     "feedbackDeleted": "AI review deleted.",
     "feedbackRegenerated": "AI review regenerated.",
     "deleteFailed": "Delete failed: {error}",
-    "editJob": { "action": "Edit job name", "title": "Edit job archive name", "description": "Linked resumes and interview materials will stay in this archive and be regrouped under the updated company name.", "company": "Company", "role": "Role", "save": "Save changes", "saving": "Saving", "cancel": "Cancel", "saved": "Job name updated and materials regrouped.", "failed": "Failed to update job name: {error}" },
-    "edit": { "action": "Edit content", "save": "Save changes", "cancel": "Cancel", "saved": "Changes saved.", "failed": "Could not save changes. Try again.", "mockInterviewTitle": "Edit mock interview and review", "answersTitle": "Edit interview answers", "question": "Question {number}", "questionText": "Question", "questionFocus": "Evaluation focus", "overallScore": "Overall score", "review": "Question {number} review", "diagnosis": "Diagnosis", "suggestion": "Suggestion", "referenceAnswer": "Reference answer", "dimensions": { "jobFit": "Job fit", "structure": "Structure", "evidence": "Evidence", "star": "STAR completeness" } },
+    "editJob": {
+      "action": "Edit job name",
+      "title": "Edit job archive name",
+      "description": "Linked resumes and interview materials will stay in this archive and be regrouped under the updated company name.",
+      "company": "Company",
+      "role": "Role",
+      "save": "Save changes",
+      "saving": "Saving",
+      "cancel": "Cancel",
+      "saved": "Job name updated and materials regrouped.",
+      "failed": "Failed to update job name: {error}"
+    },
+    "edit": {
+      "action": "Edit content",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "saved": "Changes saved.",
+      "failed": "Could not save changes. Try again.",
+      "mockInterviewTitle": "Edit mock interview and review",
+      "answersTitle": "Edit interview answers",
+      "question": "Question {number}",
+      "questionText": "Question",
+      "questionFocus": "Evaluation focus",
+      "overallScore": "Overall score",
+      "review": "Question {number} review",
+      "diagnosis": "Diagnosis",
+      "suggestion": "Suggestion",
+      "referenceAnswer": "Reference answer",
+      "dimensions": {
+        "jobFit": "Job fit",
+        "structure": "Structure",
+        "evidence": "Evidence",
+        "star": "STAR completeness"
+      }
+    },
     "editAnswers": "Edit answers",
     "regenerateFeedback": "Regenerate AI review",
     "regeneratingFeedback": "Regenerating",
     "regenerateFeedbackHint": "After editing answers, regenerate the review to update it. Regeneration replaces the current AI review.",
-    "preparationEditor": { "overview": "Role overview", "company": "Company", "role": "Role", "roleFamily": "Role family", "roleSummary": "Role summary", "assumptions": "Items to confirm", "capability": "Capability profile", "capabilityOverview": "Capability overview", "capabilityItem": "Capability {number}", "name": "Name", "currentEvidence": "Current evidence", "nextStep": "Next step", "evidence": "Role requirements and evidence", "requirementItem": "Requirement {number}", "requirement": "Role requirement", "resumeEvidence": "Resume evidence", "assessment": "Assessment", "action": "Recommended action", "knowledge": "Core knowledge", "knowledgeItem": "Knowledge topic {number}", "topic": "Topic", "relevance": "Role relevance", "explanation": "Explanation", "targetLevel": "Target level", "selfCheck": "Self-check questions", "deepDives": "Experience deep dives", "deepDiveItem": "Experience {number}", "resumeItem": "Resume experience", "contribution": "Personal contribution focus", "followUps": "Likely follow-ups", "facts": "Facts to confirm", "questions": "Targeted questions", "questionItem": "Question {number}", "question": "Question", "category": "Category", "direction": "Preparation direction", "plan": "Preparation plan", "must": "Must prepare", "should": "Should prepare", "optional": "Optional", "selfIntro": "Self introduction", "reverseQuestions": "Questions to ask", "perLine": " (one item per line)" },
+    "preparationEditor": {
+      "overview": "Role overview",
+      "company": "Company",
+      "role": "Role",
+      "roleFamily": "Role family",
+      "roleSummary": "Role summary",
+      "assumptions": "Items to confirm",
+      "capability": "Capability profile",
+      "capabilityOverview": "Capability overview",
+      "capabilityItem": "Capability {number}",
+      "name": "Name",
+      "currentEvidence": "Current evidence",
+      "nextStep": "Next step",
+      "evidence": "Role requirements and evidence",
+      "requirementItem": "Requirement {number}",
+      "requirement": "Role requirement",
+      "resumeEvidence": "Resume evidence",
+      "assessment": "Assessment",
+      "action": "Recommended action",
+      "knowledge": "Core knowledge",
+      "knowledgeItem": "Knowledge topic {number}",
+      "topic": "Topic",
+      "relevance": "Role relevance",
+      "explanation": "Explanation",
+      "targetLevel": "Target level",
+      "selfCheck": "Self-check questions",
+      "deepDives": "Experience deep dives",
+      "deepDiveItem": "Experience {number}",
+      "resumeItem": "Resume experience",
+      "contribution": "Personal contribution focus",
+      "followUps": "Likely follow-ups",
+      "facts": "Facts to confirm",
+      "questions": "Targeted questions",
+      "questionItem": "Question {number}",
+      "question": "Question",
+      "category": "Category",
+      "direction": "Preparation direction",
+      "plan": "Preparation plan",
+      "must": "Must prepare",
+      "should": "Should prepare",
+      "optional": "Optional",
+      "selfIntro": "Self introduction",
+      "reverseQuestions": "Questions to ask",
+      "perLine": " (one item per line)"
+    },
     "generalResumeSubtitle": "General resume optimization not linked to a specific role",
-    "categories": { "resume": "Resume outcomes", "analysis": "Job analysis", "interview": "Interview materials" },
-    "kinds": { "general-resume": "General optimization", "tailored-resume": "Job-tailored", "job-analysis": "Original JD", "interview-preparation": "Interview preparation", "interview-session": "Mock interview" },
-    "kindShort": { "general-resume": "Optimized resume", "tailored-resume": "Tailored resume", "job-analysis": "Original JD", "interview-preparation": "Preparation guide", "interview-session": "Mock and review" },
-    "kindDescriptions": { "general-resume": "General resume diagnosis, optimization, and changes.", "tailored-resume": "A resume tailored to a target job description.", "job-analysis": "The original job description used for JD matching.", "interview-preparation": "Structured preparation for a target role.", "interview-session": "Mock interview questions, answers, and AI review." },
-    "metrics": { "jobAnalysis": "Original JD {count}", "originalJd": "Original JD {count}", "tailoredResume": "Tailored resumes {count}", "preparation": "Guides {count}", "interview": "Mock interviews {count}", "issues": "Issues {count}", "sections": "Sections {count}", "changes": "Changes {count}", "requirements": "Requirements {count}", "keywords": "Keywords {count}", "risks": "Risks {count}", "topics": "Topics {count}", "questions": "Questions {count}", "deepDives": "Deep dives {count}", "answers": "Answered {count}", "hasFeedback": "Reviewed", "noFeedback": "Review pending" },
-    "status": { "READY": "Ready", "APPLIED": "Applied", "ASSESSMENT": "Assessment", "INTERVIEW": "Interview", "OFFER": "Offer", "REJECTED": "Rejected", "ARCHIVED": "Archived" },
+    "categories": {
+      "resume": "Resume outcomes",
+      "analysis": "Job analysis",
+      "interview": "Interview materials"
+    },
+    "kinds": {
+      "general-resume": "General optimization",
+      "tailored-resume": "Job-tailored",
+      "job-analysis": "Original JD",
+      "interview-preparation": "Interview preparation",
+      "interview-session": "Mock interview"
+    },
+    "kindShort": {
+      "general-resume": "Optimized resume",
+      "tailored-resume": "Tailored resume",
+      "job-analysis": "Original JD",
+      "interview-preparation": "Preparation guide",
+      "interview-session": "Mock and review"
+    },
+    "kindDescriptions": {
+      "general-resume": "General resume diagnosis, optimization, and changes.",
+      "tailored-resume": "A resume tailored to a target job description.",
+      "job-analysis": "The original job description used for JD matching.",
+      "interview-preparation": "Structured preparation for a target role.",
+      "interview-session": "Mock interview questions, answers, and AI review."
+    },
+    "metrics": {
+      "jobAnalysis": "Original JD {count}",
+      "originalJd": "Original JD {count}",
+      "tailoredResume": "Tailored resumes {count}",
+      "preparation": "Guides {count}",
+      "interview": "Mock interviews {count}",
+      "issues": "Issues {count}",
+      "sections": "Sections {count}",
+      "changes": "Changes {count}",
+      "requirements": "Requirements {count}",
+      "keywords": "Keywords {count}",
+      "risks": "Risks {count}",
+      "topics": "Topics {count}",
+      "questions": "Questions {count}",
+      "deepDives": "Deep dives {count}",
+      "answers": "Answered {count}",
+      "hasFeedback": "Reviewed",
+      "noFeedback": "Review pending"
+    },
+    "status": {
+      "READY": "Ready",
+      "APPLIED": "Applied",
+      "ASSESSMENT": "Assessment",
+      "INTERVIEW": "Interview",
+      "OFFER": "Offer",
+      "REJECTED": "Rejected",
+      "ARCHIVED": "Archived"
+    },
     "notFoundTitle": "Outcome not found",
     "notFoundDescription": "It may have been deleted or this link is no longer valid.",
     "backToLibrary": "Back to library",
@@ -1279,20 +1433,98 @@
     "overviewSummary": "{count} job materials · Updated {date}",
     "overviewPathTitle": "Job preparation path",
     "overviewPathDescription": "Move from the job description to tailored resumes and interview materials.",
-    "overviewPath": { "analysis": "Review the original JD and role requirements", "resume": "Open resumes tailored for this role", "interview": "Open preparation guides, mock interviews, and reviews", "empty": "No materials yet" },
+    "overviewPath": {
+      "analysis": "Review the original JD and role requirements",
+      "resume": "Open resumes tailored for this role",
+      "interview": "Open preparation guides, mock interviews, and reviews",
+      "empty": "No materials yet"
+    },
     "overviewCompositionTitle": "Material composition",
     "overviewCompositionDescription": "A factual breakdown of job analysis, tailored resumes, and interview materials in this file.",
     "jobFilesTitle": "Generated outcomes in this job file",
     "jobFilesDescription": "Sorted by recent activity. Open any item to view the full content.",
-    "emptyCategories": { "analysis": "No job analysis yet. It will appear here after JD matching.", "resume": "No job-tailored resume yet.", "interview": "No interview preparation, mock interview, or review yet." },
-    "tree": { "job-overview": "Job file overview", "overview": "Optimization overview", "job-relation": "Target role and matching basis", "diagnosis": "Resume diagnosis", "diagnosis-summary": "Diagnosis overview", "strengths": "Strengths", "issues": "Issues to address", "original-resume": "Resume before optimization", "optimized-resume": "Optimized resume", "changes": "Change comparison", "original-jd": "Original JD", "requirements": "Requirements", "keywords": "Keywords and bonuses", "risks": "Risks and advice", "capability-profile": "Capability profile", "evidence-gaps": "Evidence and gaps", "core-knowledge": "Core knowledge", "experience-deep-dives": "Experience deep dives", "targeted-questions": "Targeted questions", "preparation-plan": "Preparation plan", "questions": "Questions and answers", "feedback": "AI review" },
-    "overviewMetrics": { "analysis": "Original JD", "tailoredResume": "Tailored resumes", "preparation": "Preparation guides", "interview": "Mock interviews", "issues": "Diagnosis issues", "sections": "Changed sections", "changes": "Change records", "requirements": "Requirements", "keywords": "Keywords", "risks": "Risk notes", "questions": "Questions", "answers": "Answered", "feedback": "Review report" },
-    "resumeSections": { "profile": "Profile", "education": "Education", "experiences": "Experience", "internships": "Internships", "projects": "Projects", "skills": "Skills", "awards": "Awards", "customSections": "Other sections" },
-    "labels": { "company": "Target company", "role": "Target role", "keywords": "Matching keywords", "suggestion": "Suggestion", "nextStep": "Next step", "action": "Preparation action" },
-    "severity": { "high": "High priority", "medium": "Recommended", "low": "Optional" },
-    "evidence": { "strong": "Strong evidence", "partial": "Partial evidence", "limited": "Limited evidence", "unknown": "To confirm" },
-    "plan": { "must": "Must prepare", "should": "Should prepare", "optional": "Optional" },
-    "interviewStatus": { "IN_PROGRESS": "Mock interview in progress", "COMPLETED": "Mock interview completed" },
+    "emptyCategories": {
+      "analysis": "No job analysis yet. It will appear here after JD matching.",
+      "resume": "No job-tailored resume yet.",
+      "interview": "No interview preparation, mock interview, or review yet."
+    },
+    "tree": {
+      "job-overview": "Job file overview",
+      "overview": "Optimization overview",
+      "job-relation": "Target role and matching basis",
+      "diagnosis": "Resume diagnosis",
+      "diagnosis-summary": "Diagnosis overview",
+      "strengths": "Strengths",
+      "issues": "Issues to address",
+      "original-resume": "Resume before optimization",
+      "optimized-resume": "Optimized resume",
+      "changes": "Change comparison",
+      "original-jd": "Original JD",
+      "requirements": "Requirements",
+      "keywords": "Keywords and bonuses",
+      "risks": "Risks and advice",
+      "capability-profile": "Capability profile",
+      "evidence-gaps": "Evidence and gaps",
+      "core-knowledge": "Core knowledge",
+      "experience-deep-dives": "Experience deep dives",
+      "targeted-questions": "Targeted questions",
+      "preparation-plan": "Preparation plan",
+      "questions": "Questions and answers",
+      "feedback": "AI review"
+    },
+    "overviewMetrics": {
+      "analysis": "Original JD",
+      "tailoredResume": "Tailored resumes",
+      "preparation": "Preparation guides",
+      "interview": "Mock interviews",
+      "issues": "Diagnosis issues",
+      "sections": "Changed sections",
+      "changes": "Change records",
+      "requirements": "Requirements",
+      "keywords": "Keywords",
+      "risks": "Risk notes",
+      "questions": "Questions",
+      "answers": "Answered",
+      "feedback": "Review report"
+    },
+    "resumeSections": {
+      "profile": "Profile",
+      "education": "Education",
+      "experiences": "Experience",
+      "internships": "Internships",
+      "projects": "Projects",
+      "skills": "Skills",
+      "awards": "Awards",
+      "customSections": "Other sections"
+    },
+    "labels": {
+      "company": "Target company",
+      "role": "Target role",
+      "keywords": "Matching keywords",
+      "suggestion": "Suggestion",
+      "nextStep": "Next step",
+      "action": "Preparation action"
+    },
+    "severity": {
+      "high": "High priority",
+      "medium": "Recommended",
+      "low": "Optional"
+    },
+    "evidence": {
+      "strong": "Strong evidence",
+      "partial": "Partial evidence",
+      "limited": "Limited evidence",
+      "unknown": "To confirm"
+    },
+    "plan": {
+      "must": "Must prepare",
+      "should": "Should prepare",
+      "optional": "Optional"
+    },
+    "interviewStatus": {
+      "IN_PROGRESS": "Mock interview in progress",
+      "COMPLETED": "Mock interview completed"
+    },
     "unknown": "Unknown",
     "notRecorded": "This was not recorded in the historical outcome.",
     "issuesDescription": "Only issues saved with this outcome are shown.",
@@ -1419,7 +1651,12 @@
       "savedJd": "Use the full JD saved with this job",
       "focus": "Focus",
       "template": "Resume template",
-      "focuses": { "comprehensive": "Comprehensive", "project": "Project deep dive", "behavioral": "Behavioral", "hr": "HR interview" },
+      "focuses": {
+        "comprehensive": "Comprehensive",
+        "project": "Project deep dive",
+        "behavioral": "Behavioral",
+        "hr": "HR interview"
+      },
       "cancel": "Cancel",
       "confirm": "Confirm and run",
       "executing": "Approved. Writing the change…",
@@ -1455,5 +1692,69 @@
       "circle": "Circle",
       "oneInch": "ID photo"
     }
+  },
+  "materials": {
+    "title": "Project materials",
+    "subtitle": "Upload project summaries and technical documents, distill them into resume material, and reuse them as evidence for interview preparation and mock interviews. Materials stay on this machine.",
+    "search": "Search project materials",
+    "searchPlaceholder": "Search by name or source file",
+    "clearSearch": "Clear search",
+    "loading": "Loading project materials",
+    "loadFailed": "Failed to load project materials. Please refresh and retry.",
+    "details": "Details",
+    "sourceLine": "Source: {file} · {count} chars",
+    "draftCount": "{count} drafts",
+    "noResults": "No matching materials",
+    "noResultsHint": "Try different keywords, or clear the search to see all materials.",
+    "sections": {
+      "projects": "Projects",
+      "experiences": "Work experience",
+      "internships": "Internships"
+    },
+    "upload": {
+      "button": "Upload material",
+      "uploading": "Uploading",
+      "formats": "Supports txt / md / pdf / doc / docx up to 10 MB.",
+      "unsupported": "Unsupported file type. Please upload txt, md, pdf, doc, or docx.",
+      "imported": "Extracted {count} characters from \"{name}\".",
+      "failed": "Upload failed. Please try again later."
+    },
+    "empty": {
+      "title": "No project materials yet",
+      "hint": "Upload a project summary, technical design, or retrospective. LuJie extracts plain text and stores it locally; you can then distill resume material drafts or use it as interview evidence."
+    },
+    "detail": {
+      "name": "Material name",
+      "content": "Extracted text (editable)",
+      "contentHint": "Fix parsing mistakes directly here; save the text before distilling again.",
+      "save": "Save changes",
+      "saved": "Saved.",
+      "saveFailed": "Failed to save. Please try again later.",
+      "delete": "Delete material",
+      "deleteConfirm": "Delete \"{name}\"? All distilled drafts will be removed and cannot be recovered.",
+      "close": "Close details",
+      "generated": "A new material draft is ready.",
+      "generateFailed": "Distillation failed. Please try again later."
+    },
+    "draft": {
+      "title": "Entry content",
+      "title2": "Distill resume material",
+      "targetRolePlaceholder": "Target role (optional), e.g. Backend Engineer",
+      "generate": "Generate draft",
+      "empty": "No drafts yet. Enter a target role and generate; AI will distill a suggested entry from this material.",
+      "apply": "Apply to resume",
+      "delete": "Delete draft",
+      "section": "Suggested section",
+      "highlights": "Highlights",
+      "missingTitle": "Confirm before adding to your resume"
+    },
+    "apply": {
+      "title": "Apply to resume",
+      "description": "The entry below will be pre-filled into the selected resume as unsaved content; nothing is written to the database until you save.",
+      "targetResume": "Choose a resume version",
+      "editorHint": "After confirming, the resume editor opens with the new entry pre-filled; review, adjust, then save manually. Save any pending edits first.",
+      "close": "Close"
+    },
+    "privacyNote": "Materials are stored in your local SQLite database only. Generating drafts or interview materials sends the relevant text to your configured model provider."
   }
 }

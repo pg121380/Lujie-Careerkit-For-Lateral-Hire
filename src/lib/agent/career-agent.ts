@@ -2,8 +2,10 @@ import { InferAgentUIMessage, ToolLoopAgent, stepCountIs, tool, type ModelMessag
 
 import { createAiModel, getAiTemperature } from "@/lib/ai/client";
 import type { EffectiveAiSettings } from "@/lib/ai/settings";
+import type { CareerScene } from "@/lib/career-scene";
 import { chinaDate } from "@/lib/campus";
 import { campusSearchSchema, searchCampus } from "@/lib/agent/campus-tools";
+import { projectMaterialSearchSchema, searchProjectMaterials } from "@/lib/agent/project-material-tools";
 import { prepareAgentContext } from "@/lib/agent/message-context";
 import {
   applicationChangeSchema,
@@ -34,13 +36,14 @@ export function createCareerAgent(
   settings: EffectiveAiSettings,
   locale: "zh-CN" | "en",
   currentDate = chinaDate(),
+  scene: CareerScene = "campus",
 ) {
   return new ToolLoopAgent({
     id: "lujie-career-agent",
     model: createAiModel(settings),
     temperature: getAiTemperature(settings),
     stopWhen: stepCountIs(8),
-    instructions: buildInstructions(locale, currentDate),
+    instructions: buildInstructions(locale, currentDate, scene),
     // Check before the SDK executes approved tools, then re-check as tool results grow.
     prepareCall: (settings) => ({
       ...settings,
@@ -66,6 +69,7 @@ export function createCareerAgent(
         messages: context,
         activeTools: [
           "search_campus",
+          "search_project_materials",
           "search_pipeline",
           "get_resume_context",
           "update_application_card",
@@ -83,6 +87,12 @@ export function createCareerAgent(
           "Search LuJie's read-only campus recruitment catalog with structured filters and five summaries per page, or read a known recruitment record in full using recordId. Use this for discovering campus/internship opportunities, not search_pipeline. Returns exact filter facets, date status, review notes and internal detail links. It never creates Jobs or Application cards, browses external sites, or verifies that recruitment is still open.",
         inputSchema: campusSearchSchema,
         execute: async (input) => searchCampus(input, currentDate),
+      }),
+      search_project_materials: tool({
+        description:
+          "Search the user's saved project materials (uploaded project summaries, technical documents) by keywords, or read one material in full using materialId. Use materialIds with create_interview_preparation or create_mock_interview to attach deep-dive evidence. This never writes data.",
+        inputSchema: projectMaterialSearchSchema,
+        execute: async (input) => searchProjectMaterials(input),
       }),
       search_pipeline: tool({
         description:
@@ -114,7 +124,7 @@ export function createCareerAgent(
           "Create and save one new independent resume from facts the user explicitly narrated or typed. Use only when the user asks to create a resume, never to edit an existing resume. Ask for missing essential facts before calling. The tool structures and polishes wording but must not invent facts, and always requires approval before generation and storage.",
         inputSchema: createResumeFromExperienceSchema,
         needsApproval: true,
-        execute: async (input) => createResumeFromExperience(input, settings, locale),
+        execute: async (input) => createResumeFromExperience(input, settings, locale, scene),
         toModelOutput: ({ output: { operation, version, href } }) => ({
           type: "json", value: { operation, version: { id: version.id, resumeId: version.resumeId,
             jobId: version.jobId, name: version.name }, href },
@@ -131,7 +141,7 @@ export function createCareerAgent(
           "Generate and save a new JD-tailored resume version without overwriting the source resume. Requires an exact resumeVersionId and either an exact existing jobId or company, role, and full JD for a new Job. Use the preferences returned by the completed configuration card. Always requires approval.",
         inputSchema: createJdTailoredResumeSchema,
         needsApproval: true,
-        execute: async (input) => createJdTailoredResume(input, settings),
+        execute: async (input) => createJdTailoredResume(input, settings, scene),
         toModelOutput: ({ output: { operation, job, version, href } }) => ({
           type: "json", value: { operation, job: { id: job.id, company: job.company, title: job.title },
             version: { id: version.id, resumeId: version.resumeId, jobId: version.jobId, name: version.name }, href },
@@ -148,7 +158,7 @@ export function createCareerAgent(
           "Generate and save one structured interview-preparation guide for an exact existing Job and resume version. Use the resolved IDs and pass the completed configuration card mode as focus. It does not start a mock interview and always requires approval.",
         inputSchema: createInterviewPreparationSchema,
         needsApproval: true,
-        execute: async (input) => createInterviewPreparation(input, settings, locale),
+        execute: async (input) => createInterviewPreparation(input, settings, locale, scene),
         toModelOutput: ({ output: { operation, record, href } }) => ({
           type: "json", value: { operation, record: { id: record.id, jobId: record.jobId,
             resumeVersionId: record.resumeVersionId, mode: record.mode }, href },
@@ -252,15 +262,21 @@ function isInterviewTask(value: unknown): value is { task: "preparation" | "simu
   return value.task === "preparation" || value.task === "simulation";
 }
 
-function buildInstructions(locale: "zh-CN" | "en", currentDate: string) {
+export function buildInstructions(locale: "zh-CN" | "en", currentDate: string, scene: CareerScene = "campus") {
   const language = locale === "en" ? "English" : "Simplified Chinese";
+  const sceneRule = scene === "experienced"
+    ? "The user's career scene is experienced (social recruitment). The campus catalog only covers campus/internship opportunities; when the user looks for experienced-hire roles, explain this scope and guide them to paste the full JD so you can run the existing JD-tailoring and interview workflows with a Job they confirm."
+    : "The user's career scene is campus/internship. Use search_campus as the primary way to discover opportunities.";
   return `You are 录阶 Agent, the in-product career assistant for LuJie CareerKit.
 
 Current date: ${currentDate}.
+Career scene: ${scene === "experienced" ? "experienced (social recruitment)" : "campus/internship"}.
+${sceneRule}
 Reply in ${language}. Keep replies concise, concrete, and easy to verify.
 
 Available actions in this version:
 - Search the campus recruitment catalog and read a specific recruitment record without writing business data.
+- Search the user's saved project materials and read one full material; attach up to three as evidence for interview preparation or a mock interview.
 - Search the user's saved Job records and their optional application-tracking cards.
 - Search resume versions or read one complete privacy-filtered resume by exact ID.
 - Create or update an application-tracking card after the user reviews and approves the exact change.
@@ -273,7 +289,7 @@ Available actions in this version:
 Tool selection rules:
 1. Use only the tool needed for the user's requested outcome. Do not run the full resume → JD → application → interview chain unless the user explicitly asks for that chain.
 2. Use search_pipeline for Job/Application data. A Job can exist without an Application card; the tool returns both so you do not create duplicates.
-3. Use get_resume_context with a query to find candidates, then use resumeVersionId to read the selected resume in detail. Paginate or refine the query instead of assuming an unreturned resume does not exist.
+3. Use get_resume_context with a query to find candidates, then use resumeVersionId to read the selected resume in detail. Paginate or refine the query instead of assuming an unreturned resume does not exist. When the user asks for deeper project-based interview material, use search_project_materials first and pass materialIds to the interview tools; if no material matches, say so instead of passing guessed IDs.
 4. Never guess business IDs. When several records match, ask the user to choose.
 5. Every create or update tool is an approval boundary. Do not claim success before its output is available.
 6. IDs are internal tool arguments only. In user-facing replies, approval explanations, and summaries, identify records by resume name or company and role; never print Job, Application, Resume, ResumeVersion, or preparation IDs.

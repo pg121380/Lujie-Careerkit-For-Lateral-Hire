@@ -3,11 +3,15 @@ import {
   type InterviewPreparation,
   type InterviewPreparationInput,
 } from "../interview-preparation";
+import type { CareerScene } from "../career-scene";
 import type { EffectiveAiSettings } from "./settings";
 import { buildAiResumeSnapshot } from "./resume-snapshot";
 import { runAiObjectTask } from "./tasks";
 
-export function buildInterviewPreparationPrompt(input: InterviewPreparationInput) {
+export type InterviewPreparationTaskInput = InterviewPreparationInput & { scene?: CareerScene };
+
+export function buildInterviewPreparationPrompt(input: InterviewPreparationTaskInput) {
+  const scene = input.scene ?? "campus";
   const resume = buildAiResumeSnapshot(input.resume);
   const language = input.locale === "en" ? "English" : "简体中文";
   return [
@@ -16,10 +20,17 @@ export function buildInterviewPreparationPrompt(input: InterviewPreparationInput
     `完整公司、岗位、要求和职责信息：${input.jd}`,
     `简历名称：${input.resumeName}`,
     `简历：${JSON.stringify(resume)}`,
+    ...buildMaterialsSection(input.materials),
     "",
     "工作流程：",
     "1. 先从完整 JD 中识别公司名称和完整岗位名称，再按“岗位职能 × 经验级别 × 行业领域”识别岗位，不要因为公司行业而误判岗位职能。",
-    "2. meta.company 必须填写 JD 中可确认的真实公司名称；meta.title 必须保留完整岗位名称，包括实习/校招属性、方向说明和括号内限定词。无法确认时分别使用“目标公司”和“目标岗位”，不得自行编造或缩写。",
+    "2. meta.company 必须填写 JD 中可确认的真实公司名称；meta.title 必须保留完整岗位名称，包括经验级别、方向说明和括号内限定词。无法确认时分别使用“目标公司”和“目标岗位”，不得自行编造或缩写。",
+    ...scene === "experienced" ? experiencedPreparationRules : [],
+    ...(input.materials?.length
+      ? [
+          "附加了项目资料：deepDives 优先基于资料中的真实细节展开（个人职责、方案取舍、量化结果），每个深挖点标注来源（项目资料或简历）；资料与简历不一致时标 confirm，不得编造资料中不存在的内容。",
+        ]
+      : []),
     "3. 拆解核心职责、硬性要求、加分项、交付结果、协作方式和领域知识。",
     "4. 提炼 5-7 个简短、互不重复的能力维度，形成 capabilityProfile。requirementLevel 只表示 JD 优先级，evidenceLevel 只表示简历证据强弱，不等于候选人的真实能力。",
     "5. 对重要要求逐条寻找简历证据，状态只能是 direct、transferable、not-shown、gap、confirm。",
@@ -58,18 +69,32 @@ export function buildInterviewPreparationPrompt(input: InterviewPreparationInput
 
 export function generateInterviewPreparationWithAI(
   settings: EffectiveAiSettings,
-  input: InterviewPreparationInput,
+  input: InterviewPreparationTaskInput,
 ) {
   return runAiObjectTask({
     settings,
     schema: interviewPreparationSchema,
     system:
-      "你是严谨、通用行业、重视事实证据的面试准备教练。输出必须符合 schema，不编造候选人信息，不把简历未体现误判为能力缺失。",
+      input.scene === "experienced"
+        ? "你是严谨、通用行业、重视事实证据的社招面试准备教练，关注职责边界、业务结果与职级匹配。输出必须符合 schema，不编造候选人信息，不把简历未体现误判为能力缺失。"
+        : "你是严谨、通用行业、重视事实证据的面试准备教练。输出必须符合 schema，不编造候选人信息，不把简历未体现误判为能力缺失。",
     prompt: buildInterviewPreparationPrompt(input),
     fallback: buildInterviewPreparationFallback(input),
     taskLabel: "面试准备资料",
   });
 }
+
+function buildMaterialsSection(materials?: { name: string; content: string }[]) {
+  if (!materials?.length) return [];
+  return ["", `附加项目资料（候选人提供，用于深挖证据）：${JSON.stringify(materials)}`];
+}
+
+const experiencedPreparationRules = [
+  "候选人是有工作经验的社招求职者：deepDives 优先覆盖最近两段工作经历中的关键项目，明确个人职责与团队的分工边界。",
+  "评估经历与目标职级的匹配：业绩是否有量化与归因、是否体现 owner 意识和跨团队影响、职级晋升逻辑是否清晰。",
+  "targetedQuestions 应包含离职动机、到岗周期与薪酬沟通的准备点；空窗期或职级跳跃需要在准备计划中给出基于事实的解释思路。",
+  "preparationPlan 中加入公司业务与组织背景调研、岗位在业务中的位置、以及薪酬与职级谈判的信息准备，但不得编造公司内部信息。",
+];
 
 function buildInterviewPreparationFallback(input: InterviewPreparationInput): InterviewPreparation {
   return {

@@ -1,6 +1,7 @@
 import type { RedactedAiSettings } from "@/lib/ai/settings";
+import type { CareerScene } from "@/lib/career-scene";
 import type { InterviewSessionRecord } from "@/lib/interview-service";
-import type { InterviewPreparationRecord } from "@/lib/interview-preparation";
+import type { ProjectMaterialSummary } from "@/lib/project-material";import type { InterviewPreparationRecord } from "@/lib/interview-preparation";
 import type { ApplicationStatus, InterviewRound, JobAnalysis, ResumeContent } from "@/lib/types";
 
 export type JobView = {
@@ -43,6 +44,7 @@ export type ResumeVersionView = {
 };
 
 export type InitialData = {
+  materials: ProjectMaterialSummary[];
   resume: { id: string; resumeId: string; name: string; summary: string; content: ResumeContent; updatedAt: string } | null;
   versions: ResumeVersionView[];
   jobs: JobView[];
@@ -51,6 +53,7 @@ export type InitialData = {
   interviewPreparations: InterviewPreparationRecord[];
   settings: {
     ai: RedactedAiSettings;
+    careerScene: CareerScene;
     updatedAt: string;
   } | null;
 };

@@ -1,6 +1,8 @@
 import { z } from "zod";
 
+import type { CareerScene } from "../career-scene";
 import type { ResumeContent } from "../types";
+import { coverLetterSceneRules, greetingFirstSentenceRules } from "./career-scene";
 import { buildAiResumeSnapshot } from "./resume-snapshot";
 import type { EffectiveAiSettings } from "./settings";
 import { runAiObjectTask } from "./tasks";
@@ -19,20 +21,23 @@ export function buildApplicationMessagePrompt(input: {
   resume: ResumeContent;
   extraContext?: string;
   locale: "zh-CN" | "en";
+  scene?: CareerScene;
 }) {
   const isGreeting = input.kind === "greeting";
+  const scene = input.scene ?? "campus";
   const language = input.locale === "en" ? "English" : "简体中文";
   const formatRules = isGreeting
     ? [
         "这是用于 Boss 直聘等即时沟通场景的招呼语。",
         "使用一个紧凑自然的段落；简体中文建议 80-180 字，英文建议 45-100 词。",
-        "第一句话先给招聘方最关心的硬匹配信息：到岗时间、可实习时长、每周到岗天数、毕业时间或地点等。到岗时间、可实习时长和每周天数只能来自补充信息；毕业时间和地点可以使用简历中的明确事实。没有这些信息时，第一句话直接写最强岗位匹配点。",
+        ...greetingFirstSentenceRules(scene),
         "随后用 2-3 个与 JD 最相关的真实技能、项目或成果证明匹配度。",
         "不要使用长篇寒暄、自我感动式表达、空泛形容词、标题、落款或 Markdown；可以有一句简短礼貌收尾，但重点必须在前。",
       ]
     : [
         "这是用于招聘笔记私信、邮件或正式投递场景的求职信。",
         "语气正式、礼貌、自然；简体中文建议 250-450 字，英文建议 180-300 词。",
+        ...coverLetterSceneRules(scene),
         "先说明应聘岗位，再围绕 JD 选择 2-3 个最有说服力的真实经历或能力证据，解释为何匹配。",
         "如果补充信息提供了到岗安排或求职动机，应自然写入；最后用简洁礼貌的方式表达沟通意愿。",
         "不要复述整份简历，不要使用夸张营销话术、虚假热情、标题、占位符或 Markdown。",
@@ -65,6 +70,7 @@ export function generateApplicationMessageWithAI(
     resume: ResumeContent;
     extraContext?: string;
     locale: "zh-CN" | "en";
+    scene?: CareerScene;
   },
 ) {
   return runAiObjectTask({

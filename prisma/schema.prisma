@@ -146,7 +146,22 @@ model Settings {
   aiLastTestedAt   DateTime?
   aiLastTestStatus String    @default("untested")
   sampleDataCleared Boolean  @default(false)
+  careerScene      String    @default("campus")
   updatedAt        DateTime  @updatedAt
+}
+
+model ProjectMaterial {
+  id             String   @id @default(cuid())
+  name           String
+  sourceFileName String
+  sourceKind     String
+  content        String
+  charCount      Int
+  generations    Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([updatedAt])
 }
 
 model AgentThread {

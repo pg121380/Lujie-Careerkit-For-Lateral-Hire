@@ -29,6 +29,7 @@ const baseResume: ResumeContent = {
 
 function makeData(): InitialData {
   return {
+    materials: [],
     resume: null,
     versions: [
       {

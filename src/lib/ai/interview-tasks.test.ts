@@ -108,4 +108,53 @@ describe("interview AI tasks", () => {
     expect(prompt).toContain("未回答 / 跳过");
     expect(prompt).toContain("事实证据");
   });
+
+  it("switches the interviewer persona and focus for experienced hires", () => {
+    const prompt = buildInterviewQuestionPrompt({
+      mode: "hr",
+      company: "美团",
+      title: "后端开发工程师",
+      jd: "负责到店业务后端服务，要求三年以上经验",
+      resume: { experiences: [{ company: "字节跳动", role: "后端开发工程师" }] },
+      scene: "experienced",
+    });
+
+    expect(prompt).toContain("有工作经验的社招候选人");
+    expect(prompt).toContain("离职原因与求职动机");
+    expect(prompt).toContain("期望薪资的沟通方式");
+    expect(prompt).not.toContain("实习/校招候选人");
+  });
+
+  it("builds experienced fallback questions with resignation and salary topics", () => {
+    const questions = buildInterviewQuestionFallback({
+      mode: "comprehensive",
+      company: "美团",
+      title: "后端开发工程师",
+      jd: "负责到店业务后端服务",
+      resume: {
+        experiences: [{ company: "字节跳动", role: "后端开发工程师" }],
+        projects: [{ name: "到店订单重构" }],
+      },
+      scene: "experienced",
+    });
+
+    expect(questions).toHaveLength(8);
+    const prompts = questions.map((question) => question.prompt).join("\n");
+    expect(prompts).toContain("为什么在这个阶段考虑 美团 的 后端开发工程师？");
+    expect(prompts).toContain("数字如何统计、归因到你的哪些动作？");
+    expect(prompts).not.toContain("实习或校招机会");
+  });
+
+  it("keeps the campus fallback unchanged by default", () => {
+    const questions = buildInterviewQuestionFallback({
+      mode: "hr",
+      company: "腾讯",
+      title: "产品运营实习生",
+      jd: "负责用户研究",
+      resume: {},
+    });
+
+    const prompts = questions.map((question) => question.prompt).join("\n");
+    expect(prompts).toContain("你选择实习或校招机会时最看重哪些因素？");
+  });
 });

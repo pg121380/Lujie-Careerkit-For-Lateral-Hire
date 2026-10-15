@@ -6,7 +6,8 @@ import { createCareerAgent, type CareerAgentUIMessage } from "@/lib/agent/career
 import { AgentContextError, markUnfinishedApprovals, mergeLatestMessage, prepareAgentContext } from "@/lib/agent/message-context";
 import { AgentThreadConflictError, getAgentThread, saveAgentThreadMessages } from "@/lib/agent/thread-store";
 import { normalizeAiError } from "@/lib/ai/errors";
-import { getEffectiveAiRuntimeSettings } from "@/lib/repository";
+import { chinaDate } from "@/lib/campus";
+import { getCareerScene, getEffectiveAiRuntimeSettings } from "@/lib/repository";
 
 export const maxDuration = 60;
 
@@ -28,12 +29,12 @@ export async function POST(request: Request) {
   const thread = await getAgentThread(parsed.data.id);
   if (!thread) return Response.json({ error: "对话不存在。" }, { status: 404 });
 
-  const settings = await getEffectiveAiRuntimeSettings();
+  const [settings, scene] = await Promise.all([getEffectiveAiRuntimeSettings(), getCareerScene()]);
   if (!settings.enabled) {
     return Response.json({ error: "请先在设置中完成 AI Provider 与 API Key 配置。" }, { status: 503 });
   }
 
-  const agent = createCareerAgent(settings, parsed.data.locale);
+  const agent = createCareerAgent(settings, parsed.data.locale, chinaDate(), scene);
   let messages: UIMessage[];
   try {
     messages = mergeLatestMessage(thread.messages, parsed.data.message as UIMessage);

@@ -4,7 +4,7 @@ import { MockLanguageModelV3 } from "ai/test";
 
 import { createAiModel } from "@/lib/ai/client";
 import { getAppData, updateResumeVersion } from "@/lib/repository";
-import { createCareerAgent } from "./career-agent";
+import { createCareerAgent, buildInstructions } from "./career-agent";
 import { AgentContextError } from "./message-context";
 
 vi.mock("@/lib/ai/client", () => ({ createAiModel: vi.fn(), getAiTemperature: vi.fn() }));
@@ -14,6 +14,21 @@ const usage = {
   inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 },
   outputTokens: { total: 10, text: 10, reasoning: 0 },
 };
+
+describe("career agent instructions", () => {
+  it("keeps the campus catalog as the default opportunity source", () => {
+    const instructions = buildInstructions("zh-CN", "2026-10-14");
+    expect(instructions).toContain("campus/internship");
+    expect(instructions).toContain("Use search_campus as the primary way to discover opportunities.");
+  });
+
+  it("tells experienced users the catalog only covers campus roles and to paste a JD", () => {
+    const instructions = buildInstructions("zh-CN", "2026-10-14", "experienced");
+    expect(instructions).toContain("experienced (social recruitment)");
+    expect(instructions).toContain("only covers campus/internship opportunities");
+    expect(instructions).toContain("paste the full JD");
+  });
+});
 const content = { basics: { email: "private@example.com", phone: "private-phone" }, editor: { template: "ats" }, profile: { summary: "private-resume" } };
 const version = { id: "v1", resumeId: "r1", jobId: "j1", name: "Resume", summary: "Summary", content,
   createdAt: new Date("2026-09-29"), updatedAt: new Date("2026-09-29") };

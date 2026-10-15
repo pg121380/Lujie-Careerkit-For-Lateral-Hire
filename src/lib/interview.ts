@@ -41,6 +41,11 @@ export const interviewContextSchema = z.object({
   jd: z.string().trim().min(1),
   resumeName: z.string().trim().min(1),
   resume: z.unknown(),
+  /** 附加项目资料快照：保存内容拷贝，历史记录不受资料删除影响。 */
+  materials: z.array(z.object({
+    name: z.string().trim().min(1).max(200),
+    content: z.string().trim().min(1).max(60_000),
+  })).max(3).optional(),
 });
 
 export const createInterviewSessionInputSchema = z.object({

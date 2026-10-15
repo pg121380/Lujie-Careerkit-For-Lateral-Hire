@@ -3,6 +3,7 @@ import { createInterviewPreparationInputSchema } from "@/lib/interview-preparati
 import {
   clearInterviewPreparationRecords,
   createInterviewPreparationRecord,
+  getCareerScene,
   getEffectiveAiRuntimeSettings,
 } from "@/lib/repository";
 
@@ -17,8 +18,8 @@ export function GET() {
 export async function POST(request: Request) {
   try {
     const input = createInterviewPreparationInputSchema.parse(await request.json());
-    const settings = await getEffectiveAiRuntimeSettings();
-    const result = await generateInterviewPreparationWithAI(settings, input);
+    const [settings, scene] = await Promise.all([getEffectiveAiRuntimeSettings(), getCareerScene()]);
+    const result = await generateInterviewPreparationWithAI(settings, { ...input, scene });
     if (result.source !== "ai") throw new Error(result.message);
     const record = await createInterviewPreparationRecord(input, result.data);
     return Response.json({

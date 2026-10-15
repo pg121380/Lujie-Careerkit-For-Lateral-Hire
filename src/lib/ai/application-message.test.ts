@@ -59,4 +59,30 @@ describe("application message AI task", () => {
     expect(prompt).toContain("2-3 个最有说服力的真实经历或能力证据");
     expect(prompt).toContain("严禁编造");
   });
+
+  it("uses availability-and-tenure first sentences for experienced greetings", () => {
+    const prompt = buildApplicationMessagePrompt({
+      kind: "greeting",
+      jd: "招聘后端开发工程师，要求三年以上经验。",
+      resume,
+      extraContext: "目前在职，离职交接需要一个月，最快下月到岗。",
+      locale: "zh-CN",
+      scene: "experienced",
+    });
+
+    expect(prompt).toContain("当前在职状态、离职或交接周期、最快到岗时间");
+    expect(prompt).toContain("不要提及可实习时长、每周到岗天数或毕业时间");
+    expect(prompt).not.toContain("可实习时长、每周到岗天数、毕业时间或地点等");
+  });
+
+  it("keeps campus greeting rules as the default", () => {
+    const prompt = buildApplicationMessagePrompt({
+      kind: "greeting",
+      jd: "招聘 AI 产品实习生。",
+      resume,
+      locale: "zh-CN",
+    });
+
+    expect(prompt).toContain("到岗时间、可实习时长、每周到岗天数、毕业时间或地点");
+  });
 });

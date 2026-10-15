@@ -2,11 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getEffectiveAiRuntimeSettings: vi.fn(),
+  getCareerScene: vi.fn(),
   runAiObjectTask: vi.fn(),
 }));
 
 vi.mock("./repository", () => ({
   getEffectiveAiRuntimeSettings: mocks.getEffectiveAiRuntimeSettings,
+  getCareerScene: mocks.getCareerScene,
 }));
 vi.mock("./ai/tasks", () => ({
   runAiObjectTask: mocks.runAiObjectTask,
@@ -59,6 +61,7 @@ describe("resume AI optimization", () => {
       ],
     };
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历优化完成",
@@ -97,6 +100,7 @@ describe("resume AI optimization", () => {
       ],
     };
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历优化完成",
@@ -126,6 +130,7 @@ describe("resume AI optimization", () => {
       selfReview: "熟悉 AI 产品设计与 Prompt 迭代。",
     };
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历优化完成",
@@ -144,6 +149,7 @@ describe("resume AI optimization", () => {
 
   it("limits general optimization to selected diagnosis issues and additional direction", async () => {
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历优化完成",
@@ -208,6 +214,7 @@ describe("resume AI optimization", () => {
 
   it("analyzes the resume without requesting a score", async () => {
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历诊断完成",
@@ -236,6 +243,7 @@ describe("resume AI optimization", () => {
       customSections: [{ title: "主要优势与技能认证", content: "具备 AIGC 全链路创作与落地经验。" }],
     };
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历优化完成",
@@ -274,6 +282,7 @@ describe("resume AI optimization", () => {
       profile: { ...originalResume.profile, summary: "突出 AI 产品规划与项目落地能力。" },
     };
     mocks.getEffectiveAiRuntimeSettings.mockResolvedValue({ enabled: true });
+    mocks.getCareerScene.mockResolvedValue("campus");
     mocks.runAiObjectTask.mockResolvedValue({
       source: "ai",
       message: "简历匹配优化完成",

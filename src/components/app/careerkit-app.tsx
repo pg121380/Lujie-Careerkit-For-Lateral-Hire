@@ -6,6 +6,9 @@ import { useTranslations } from "next-intl";
 
 import type { NavKey } from "@/lib/navigation";
 import { navKeyFromPathname, pathnameForNavKey } from "@/lib/navigation";
+import type { CareerScene } from "@/lib/career-scene";
+import { applyGenerationToResume, type MaterialGeneration } from "@/lib/project-material";
+import { MaterialsWorkspace } from "@/components/materials/materials-workspace";
 import { hasResumeContent } from "@/lib/resume-library";
 import { buildResumeDisplayName } from "@/lib/resume-naming";
 import type { RedactedAiSettings } from "@/lib/ai/settings";
@@ -151,6 +154,7 @@ export function CareerKitApp({
   const [active, setActive] = useState<NavKey>(initialView);
   const [resumeMode, setResumeMode] = useState<ResumeMode>(initialResumeMode);
   const [resumeEditorVersionId, setResumeEditorVersionId] = useState(initialResumeVersionId);
+  const [materialApplyNonce, setMaterialApplyNonce] = useState(0);
   const [libraryTarget, setLibraryTarget] = useState<CareerLibraryTarget | null>(initialLibraryTarget);
   const [libraryGroup, setLibraryGroup] = useState<CareerLibraryGroup>(initialLibraryGroup);
   const [resume, setResume] = useState<ResumeContent>(initialData.resume?.content ?? emptyResume());
@@ -336,6 +340,28 @@ export function CareerKitApp({
     window.history.pushState(null, "", group === "type" ? "/library?group=type" : "/library");
   }, []);
 
+  function applyMaterialToResume({ versionId, generation }: { versionId: string | null; generation: MaterialGeneration }) {
+    const targetVersion = versionId ? versions.find((version) => version.id === versionId) : null;
+    const baseContent = targetVersion?.content ?? resume;
+    const nextContent = applyGenerationToResume(baseContent, generation);
+    if (targetVersion) {
+      setVersions((items) => items.map((item) => (item.id === targetVersion.id ? { ...item, content: nextContent } : item)));
+    }
+    setResume(nextContent);
+    setResumeUpdatedAt(new Date().toISOString());
+    setResumeOptimizationVersionId(undefined);
+    setResumeOptimizationResult(null);
+    setActive("resume");
+    setResumeMode("editor");
+    setResumeEditorVersionId(targetVersion?.id);
+    setMaterialApplyNonce((value) => value + 1);
+    setToast(t("materialApplied"));
+    const nextPath = targetVersion ? `/resume/edit?version=${encodeURIComponent(targetVersion.id)}` : "/resume/edit";
+    if (`${window.location.pathname}${window.location.search}` !== nextPath) {
+      window.history.pushState(null, "", nextPath);
+    }
+  }
+
   const openResumeEditorFromMatch = useCallback((versionId?: string) => {
     setActive("resume");
     setResumeMode("editor");
@@ -346,8 +372,7 @@ export function CareerKitApp({
     const nextPath = versionId ? `/resume/edit?version=${encodeURIComponent(versionId)}` : "/resume/edit";
     if (`${window.location.pathname}${window.location.search}` !== nextPath) {
       window.history.pushState(null, "", nextPath);
-    }
-  }, []);
+    }  }, []);
 
   const upsertInterviewSession = useCallback((session: InterviewSessionRecord) => {
     setInterviewSessions((current) => [session, ...current.filter((item) => item.id !== session.id)]);
@@ -471,6 +496,11 @@ export function CareerKitApp({
   async function clearLocalSampleData() {
     const result = (await postJson("/api/settings/sample-data", {}, "DELETE")) as { data: InitialData };
     replaceLocalData(result.data);
+  }
+
+  async function changeCareerScene(scene: CareerScene) {
+    const next = (await postJson("/api/settings/career-scene", { careerScene: scene })) as { careerScene: CareerScene };
+    setAppSettings((current) => (current ? { ...current, careerScene: next.careerScene } : current));
   }
 
   async function resetLocalDataToSample() {
@@ -1170,6 +1200,12 @@ export function CareerKitApp({
           /> : null}
 
           {active === "campus" && <CampusWorkspace />}
+          {active === "materials" && (
+            <MaterialsWorkspace
+              resumeVersions={versions}
+              onApplyToResume={applyMaterialToResume}
+            />
+          )}
           {active === "dashboard" && (
             <DashboardWorkspace
               summary={dashboard}
@@ -1264,7 +1300,7 @@ export function CareerKitApp({
               </>
             ) : (
               <ResumeWorkbench
-                key={resumeEditorVersionId ?? "main-resume"}
+                key={`${resumeEditorVersionId ?? "main-resume"}:${materialApplyNonce}`}
                  resume={resume}
                  resumeUpdatedAt={resumeUpdatedAt}
                  mainResumeVersionId={mainResumeVersionId}
@@ -1318,6 +1354,7 @@ export function CareerKitApp({
               resume={resume}
                mainResumeName={initialData.resume?.name ?? buildResumeDisplayName(resume, "原简历")}
                mainResumeVersionId={mainResumeVersionId}
+              materials={initialData.materials}
               targetSessionId={interviewSessionId}
               targetPreparationId={interviewPreparationId}
               onSessionUpsert={upsertInterviewSession}
@@ -1349,6 +1386,7 @@ export function CareerKitApp({
               agentAssistantVisible={agentAssistantVisible}
               onAiSettingsChange={setAiSettings}
               onAgentAssistantVisibleChange={writeAgentAssistantVisibility}
+              onCareerSceneChange={changeCareerScene}
               onClearSampleData={clearLocalSampleData}
               onResetData={resetLocalDataToSample}
               onStatus={setToast}
