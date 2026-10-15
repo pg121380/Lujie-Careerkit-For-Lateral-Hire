@@ -17,3 +17,8 @@ export async function PATCH(request: Request) {
     );
   }
 }
+
+// 兼容部分部署环境/代理只放行 POST 的情况：POST 与 PATCH 等价。
+export async function POST(request: Request) {
+  return PATCH(request);
+}

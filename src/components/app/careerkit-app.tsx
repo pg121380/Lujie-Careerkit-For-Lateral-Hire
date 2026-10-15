@@ -499,7 +499,7 @@ export function CareerKitApp({
   }
 
   async function changeCareerScene(scene: CareerScene) {
-    const next = (await postJson("/api/settings/career-scene", { careerScene: scene })) as { careerScene: CareerScene };
+    const next = (await postJson("/api/settings/career-scene", { careerScene: scene }, "PATCH")) as { careerScene: CareerScene };
     setAppSettings((current) => (current ? { ...current, careerScene: next.careerScene } : current));
   }
 
